@@ -47,14 +47,15 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(10))->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user' => $user,
@@ -67,18 +68,12 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        // For stateful authentication (cookies), we don't need to delete tokens
-        // The session will be invalidated automatically
-        if ($request->user()->currentAccessToken()) {
-            // Only delete if it's a personal access token (not transient)
-            if (method_exists($request->user()->currentAccessToken(), 'delete')) {
-                $request->user()->currentAccessToken()->delete();
-            }
+        // Delete the current access token if it's a persistent token
+        $token = $request->user()->currentAccessToken();
+        
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
         }
-
-        // Invalidate the session for stateful authentication
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
 
         return response()->json(['message' => 'Logged out successfully']);
     }
@@ -99,10 +94,13 @@ class AuthController extends Controller
         $user = $request->user();
         
         // Delete current token
-        $user->currentAccessToken()->delete();
+        $token = $user->currentAccessToken();
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
         
-        // Create new token with 10 minute expiration
-        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(10))->plainTextToken;
+        // Create new token
+        $token = $user->createToken('auth_token')->plainTextToken;
         
         return response()->json([
             'user' => $user,

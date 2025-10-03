@@ -348,7 +348,8 @@ describe('Task API Edge Cases', function () {
     test('can handle non-existent task show', function () {
         $response = $this->getJson('/api/tasks/999');
         
-        $response->assertStatus(403);
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Task not found']);
     });
 
     test('can handle non-existent task update', function () {
@@ -357,13 +358,15 @@ describe('Task API Edge Cases', function () {
             'date' => now()->addDay()->format('Y-m-d')
         ]);
         
-        $response->assertStatus(403);
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Task not found']);
     });
 
     test('can handle non-existent task delete', function () {
         $response = $this->deleteJson('/api/tasks/999');
         
-        $response->assertStatus(403);
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Task not found']);
     });
 
     test('can create task with minimal required data', function () {

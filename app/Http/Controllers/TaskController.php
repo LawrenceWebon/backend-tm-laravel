@@ -54,6 +54,11 @@ class TaskController extends Controller
     public function show(string $id)
     {
         $task = $this->taskRepository->find($id);
+        
+        if (!$task) {
+            return response()->json(['message' => 'Task not found'], 404);
+        }
+        
         $this->authorize('view', $task);
 
         return new TaskResource($task);
@@ -65,6 +70,11 @@ class TaskController extends Controller
     public function update(TaskRequest $request, string $id)
     {
         $task = $this->taskRepository->find($id);
+        
+        if (!$task) {
+            return response()->json(['message' => 'Task not found'], 404);
+        }
+        
         $this->authorize('update', $task);
 
         $this->taskRepository->update($id, $request->validated());
