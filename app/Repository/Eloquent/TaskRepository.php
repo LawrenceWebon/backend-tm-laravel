@@ -11,7 +11,7 @@ class TaskRepository implements TaskRepositoryInterface
     /**
      * Get all tasks for a user with optional filters
      */
-    public function getAllByUser(int $userId, ?string $date = null, ?string $status = null, ?string $search = null): Collection
+    public function getAllByUser(int $userId, ?string $date = null, ?string $status = null, ?string $search = null, ?string $priority = null, ?string $sort = null): Collection
     {
         $query = Task::where('user_id', $userId);
 
@@ -24,10 +24,32 @@ class TaskRepository implements TaskRepositoryInterface
         }
 
         if ($search) {
-            $query->where('title', 'like', "%{$search}%");
+            $query->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($search) . '%']);
         }
 
-        return $query->orderBy('order')->get();
+        if ($priority) {
+            $query->where('priority', $priority);
+        }
+
+        // Apply sorting
+        if ($sort) {
+            switch ($sort) {
+                case 'priority':
+                    $query->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END");
+                    break;
+                case 'title':
+                    $query->orderBy('title');
+                    break;
+                case 'order':
+                default:
+                    $query->orderBy('order');
+                    break;
+            }
+        } else {
+            $query->orderBy('order');
+        }
+
+        return $query->get();
     }
 
     /**

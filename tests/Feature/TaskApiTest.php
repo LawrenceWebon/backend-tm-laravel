@@ -100,6 +100,116 @@ describe('Task API Endpoints', function () {
         expect($response->json('data.0.title'))->toContain('meeting');
     });
 
+    test('can filter tasks by priority', function () {
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'high'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'medium'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'low'
+        ]);
+        
+        $response = $this->getJson('/api/tasks?priority=high');
+        
+        $response->assertStatus(200);
+        expect($response->json('data'))->toHaveCount(1);
+        expect($response->json('data.0.priority'))->toBe('high');
+    });
+
+    test('can sort tasks by priority', function () {
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'low',
+            'title' => 'Low Priority Task'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'high',
+            'title' => 'High Priority Task'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'medium',
+            'title' => 'Medium Priority Task'
+        ]);
+        
+        $response = $this->getJson('/api/tasks?sort=priority');
+        
+        $response->assertStatus(200);
+        $tasks = $response->json('data');
+        
+        // Should be sorted by priority: high, medium, low
+        expect($tasks[0]['priority'])->toBe('high');
+        expect($tasks[1]['priority'])->toBe('medium');
+        expect($tasks[2]['priority'])->toBe('low');
+    });
+
+    test('can sort tasks by title alphabetically', function () {
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'title' => 'Zebra Task'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'title' => 'Apple Task'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'title' => 'Banana Task'
+        ]);
+        
+        $response = $this->getJson('/api/tasks?sort=title');
+        
+        $response->assertStatus(200);
+        $tasks = $response->json('data');
+        
+        // Should be sorted alphabetically
+        expect($tasks[0]['title'])->toBe('Apple Task');
+        expect($tasks[1]['title'])->toBe('Banana Task');
+        expect($tasks[2]['title'])->toBe('Zebra Task');
+    });
+
+    test('can sort tasks by custom order', function () {
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'order' => 3,
+            'title' => 'Third Task'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'order' => 1,
+            'title' => 'First Task'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'order' => 2,
+            'title' => 'Second Task'
+        ]);
+        
+        $response = $this->getJson('/api/tasks?sort=order');
+        
+        $response->assertStatus(200);
+        $tasks = $response->json('data');
+        
+        // Should be sorted by order
+        expect($tasks[0]['title'])->toBe('First Task');
+        expect($tasks[1]['title'])->toBe('Second Task');
+        expect($tasks[2]['title'])->toBe('Third Task');
+    });
+
     test('can create a new task', function () {
         $taskData = [
             'title' => 'Test Task',
@@ -191,6 +301,50 @@ describe('Task API Endpoints', function () {
             'id' => $task->id,
             'title' => 'Updated Title',
             'status' => 'completed'
+        ]);
+    });
+
+    test('can update task priority', function () {
+        $task = Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'medium'
+        ]);
+        
+        $updateData = [
+            'priority' => 'high'
+        ];
+        
+        $response = $this->putJson("/api/tasks/{$task->id}", $updateData);
+        
+        $response->assertStatus(200);
+        expect($response->json('data.priority'))->toBe('high');
+        
+        // Verify priority was updated in database
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'priority' => 'high'
+        ]);
+    });
+
+    test('can update task priority from high to low', function () {
+        $task = Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'high'
+        ]);
+        
+        $updateData = [
+            'priority' => 'low'
+        ];
+        
+        $response = $this->putJson("/api/tasks/{$task->id}", $updateData);
+        
+        $response->assertStatus(200);
+        expect($response->json('data.priority'))->toBe('low');
+        
+        // Verify priority was updated in database
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'priority' => 'low'
         ]);
     });
 
@@ -334,6 +488,48 @@ describe('Task API Validation', function () {
             $response->assertStatus(201);
         }
     });
+
+    test('update task validates priority values', function () {
+        $task = Task::factory()->create(['user_id' => $this->user->id]);
+        
+        $response = $this->putJson("/api/tasks/{$task->id}", [
+            'priority' => 'invalid_priority'
+        ]);
+        
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['priority']);
+    });
+
+    test('priority validation accepts only enum values', function () {
+        $task = Task::factory()->create(['user_id' => $this->user->id]);
+        
+        // Test invalid priority values
+        $invalidPriorities = ['urgent', 'normal', '1', '2', '3', '', null];
+        
+        foreach ($invalidPriorities as $invalidPriority) {
+            $response = $this->putJson("/api/tasks/{$task->id}", [
+                'priority' => $invalidPriority
+            ]);
+            
+            $response->assertStatus(422)
+                ->assertJsonValidationErrors(['priority']);
+        }
+    });
+
+    test('priority validation accepts valid enum values', function () {
+        $task = Task::factory()->create(['user_id' => $this->user->id]);
+        
+        $validPriorities = ['low', 'medium', 'high'];
+        
+        foreach ($validPriorities as $priority) {
+            $response = $this->putJson("/api/tasks/{$task->id}", [
+                'priority' => $priority
+            ]);
+            
+            $response->assertStatus(200);
+            expect($response->json('data.priority'))->toBe($priority);
+        }
+    });
 });
 
 describe('Task API Edge Cases', function () {
@@ -391,5 +587,95 @@ describe('Task API Edge Cases', function () {
         $response->assertStatus(201);
         expect($response->json('data.priority'))->toBe('high');
         expect($response->json('data.order'))->toBe(5);
+    });
+
+    test('can filter tasks by multiple criteria including priority', function () {
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'high',
+            'status' => 'pending',
+            'date' => now()->format('Y-m-d')
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'high',
+            'status' => 'completed',
+            'date' => now()->format('Y-m-d')
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'low',
+            'status' => 'pending',
+            'date' => now()->format('Y-m-d')
+        ]);
+        
+        $response = $this->getJson('/api/tasks?priority=high&status=pending');
+        
+        $response->assertStatus(200);
+        expect($response->json('data'))->toHaveCount(1);
+        expect($response->json('data.0.priority'))->toBe('high');
+        expect($response->json('data.0.status'))->toBe('pending');
+    });
+
+    test('can combine search and priority filtering', function () {
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'title' => 'Important meeting',
+            'priority' => 'high'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'title' => 'Important call',
+            'priority' => 'low'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'title' => 'Regular task',
+            'priority' => 'high'
+        ]);
+        
+        $response = $this->getJson('/api/tasks?search=important&priority=high');
+        
+        $response->assertStatus(200);
+        expect($response->json('data'))->toHaveCount(1);
+        expect($response->json('data.0.title'))->toContain('Important');
+        expect($response->json('data.0.priority'))->toBe('high');
+    });
+
+    test('can sort tasks by priority with mixed statuses', function () {
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'low',
+            'status' => 'completed',
+            'title' => 'Low Completed'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'high',
+            'status' => 'pending',
+            'title' => 'High Pending'
+        ]);
+        
+        Task::factory()->create([
+            'user_id' => $this->user->id,
+            'priority' => 'medium',
+            'status' => 'completed',
+            'title' => 'Medium Completed'
+        ]);
+        
+        $response = $this->getJson('/api/tasks?sort=priority');
+        
+        $response->assertStatus(200);
+        $tasks = $response->json('data');
+        
+        // Should be sorted by priority regardless of status
+        expect($tasks[0]['priority'])->toBe('high');
+        expect($tasks[1]['priority'])->toBe('medium');
+        expect($tasks[2]['priority'])->toBe('low');
     });
 });

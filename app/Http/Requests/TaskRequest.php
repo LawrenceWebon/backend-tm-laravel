@@ -29,6 +29,8 @@ class TaskRequest extends FormRequest
         ];
 
         if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
+            $rules['title'] = 'sometimes|string|max:255';
+            $rules['date'] = 'sometimes|date';
             $rules['status'] = 'sometimes|in:pending,completed';
         }
 

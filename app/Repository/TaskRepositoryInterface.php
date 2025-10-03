@@ -9,7 +9,7 @@ interface TaskRepositoryInterface
     /**
      * Get all tasks for a user with optional filters
      */
-    public function getAllByUser(int $userId, ?string $date = null, ?string $status = null, ?string $search = null);
+    public function getAllByUser(int $userId, ?string $date = null, ?string $status = null, ?string $search = null, ?string $priority = null, ?string $sort = null);
 
     /**
      * Create a new task

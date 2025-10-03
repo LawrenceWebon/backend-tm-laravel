@@ -25,7 +25,9 @@ class TaskController extends Controller
             $request->user()->id,
             $request->date,
             $request->status,
-            $request->search
+            $request->search,
+            $request->priority,
+            $request->sort
         );
 
         return TaskResource::collection($tasks);

@@ -32,7 +32,25 @@ class Task extends Model
     protected $casts = [
         'date' => 'date',
         'order' => 'integer',
+        'priority' => 'string',
     ];
+
+    /**
+     * The possible priority values.
+     *
+     * @var array<string>
+     */
+    public const PRIORITY_LEVELS = ['low', 'medium', 'high'];
+
+    /**
+     * Get the priority levels.
+     *
+     * @return array<string>
+     */
+    public static function getPriorityLevels(): array
+    {
+        return self::PRIORITY_LEVELS;
+    }
 
     /**
      * Get the user that owns the task.
