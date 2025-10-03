@@ -24,7 +24,7 @@ class TaskRepository implements TaskRepositoryInterface
         }
 
         if ($search) {
-            $query->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($search) . '%']);
+            $query->whereRaw('LOWER(title) LIKE ?', ['%'.strtolower($search).'%']);
         }
 
         if ($priority) {
@@ -74,8 +74,8 @@ class TaskRepository implements TaskRepositoryInterface
     public function update(int $id, array $data): bool
     {
         $task = Task::find($id);
-        
-        if (!$task) {
+
+        if (! $task) {
             return false;
         }
 
@@ -88,8 +88,8 @@ class TaskRepository implements TaskRepositoryInterface
     public function delete(int $id): bool
     {
         $task = Task::find($id);
-        
-        if (!$task) {
+
+        if (! $task) {
             return false;
         }
 

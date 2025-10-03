@@ -22,7 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    
+
     // Task routes
     Route::put('tasks/reorder', [TaskController::class, 'reorder']);
     Route::apiResource('tasks', TaskController::class);

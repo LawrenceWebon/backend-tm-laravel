@@ -1,23 +1,22 @@
 <?php
 
 use App\Models\User;
-use Laravel\Sanctum\PersonalAccessToken;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 describe('API Authentication', function () {
-    
+
     describe('Login API', function () {
-        
+
         test('user can login with valid credentials', function () {
             $user = User::factory()->create([
                 'email' => 'test@example.com',
-                'password' => bcrypt('password123')
+                'password' => bcrypt('password123'),
             ]);
 
             $response = $this->postJson('/api/login', [
                 'email' => 'test@example.com',
-                'password' => 'password123'
+                'password' => 'password123',
             ]);
 
             $response->assertStatus(200)
@@ -28,34 +27,34 @@ describe('API Authentication', function () {
                         'email',
                         'email_verified_at',
                         'created_at',
-                        'updated_at'
+                        'updated_at',
                     ],
-                    'token'
+                    'token',
                 ])
                 ->assertJson([
                     'user' => [
                         'id' => $user->id,
                         'name' => $user->name,
-                        'email' => $user->email
-                    ]
+                        'email' => $user->email,
+                    ],
                 ]);
 
             // Verify token was created
             $this->assertDatabaseHas('personal_access_tokens', [
                 'tokenable_type' => User::class,
-                'tokenable_id' => $user->id
+                'tokenable_id' => $user->id,
             ]);
         });
 
         test('user cannot login with invalid email', function () {
             User::factory()->create([
                 'email' => 'test@example.com',
-                'password' => bcrypt('password123')
+                'password' => bcrypt('password123'),
             ]);
 
             $response = $this->postJson('/api/login', [
                 'email' => 'wrong@example.com',
-                'password' => 'password123'
+                'password' => 'password123',
             ]);
 
             $response->assertStatus(422)
@@ -65,12 +64,12 @@ describe('API Authentication', function () {
         test('user cannot login with invalid password', function () {
             User::factory()->create([
                 'email' => 'test@example.com',
-                'password' => bcrypt('password123')
+                'password' => bcrypt('password123'),
             ]);
 
             $response = $this->postJson('/api/login', [
                 'email' => 'test@example.com',
-                'password' => 'wrongpassword'
+                'password' => 'wrongpassword',
             ]);
 
             $response->assertStatus(422)
@@ -79,7 +78,7 @@ describe('API Authentication', function () {
 
         test('login requires email field', function () {
             $response = $this->postJson('/api/login', [
-                'password' => 'password123'
+                'password' => 'password123',
             ]);
 
             $response->assertStatus(422)
@@ -88,7 +87,7 @@ describe('API Authentication', function () {
 
         test('login requires password field', function () {
             $response = $this->postJson('/api/login', [
-                'email' => 'test@example.com'
+                'email' => 'test@example.com',
             ]);
 
             $response->assertStatus(422)
@@ -98,7 +97,7 @@ describe('API Authentication', function () {
         test('login requires valid email format', function () {
             $response = $this->postJson('/api/login', [
                 'email' => 'invalid-email',
-                'password' => 'password123'
+                'password' => 'password123',
             ]);
 
             $response->assertStatus(422)
@@ -107,27 +106,27 @@ describe('API Authentication', function () {
     });
 
     describe('Logout API', function () {
-        
+
         test('authenticated user can logout', function () {
             $user = User::factory()->create();
             $token = $user->createToken('test-token')->plainTextToken;
 
             $response = $this->withHeaders([
-                'Authorization' => 'Bearer ' . $token,
+                'Authorization' => 'Bearer '.$token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
-                'Content-Length' => '0'
+                'Content-Length' => '0',
             ])->postJson('/api/logout', []);
 
             $response->assertStatus(200)
                 ->assertJson([
-                    'message' => 'Logged out successfully'
+                    'message' => 'Logged out successfully',
                 ]);
 
             // Verify token was deleted
             $this->assertDatabaseMissing('personal_access_tokens', [
                 'tokenable_type' => User::class,
-                'tokenable_id' => $user->id
+                'tokenable_id' => $user->id,
             ]);
         });
 
@@ -136,7 +135,7 @@ describe('API Authentication', function () {
 
             $response->assertStatus(401)
                 ->assertJson([
-                    'message' => 'Unauthenticated.'
+                    'message' => 'Unauthenticated.',
                 ]);
         });
 
@@ -145,12 +144,12 @@ describe('API Authentication', function () {
                 'Authorization' => 'Bearer invalid-token',
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
-                'Content-Length' => '0'
+                'Content-Length' => '0',
             ])->postJson('/api/logout', []);
 
             $response->assertStatus(401)
                 ->assertJson([
-                    'message' => 'Unauthenticated.'
+                    'message' => 'Unauthenticated.',
                 ]);
         });
 
@@ -164,10 +163,10 @@ describe('API Authentication', function () {
 
             // Logout with first token
             $response = $this->withHeaders([
-                'Authorization' => 'Bearer ' . $token1,
+                'Authorization' => 'Bearer '.$token1,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
-                'Content-Length' => '0'
+                'Content-Length' => '0',
             ])->postJson('/api/logout', []);
 
             $response->assertStatus(200);
@@ -176,27 +175,27 @@ describe('API Authentication', function () {
             $this->assertDatabaseCount('personal_access_tokens', 1);
             $this->assertDatabaseHas('personal_access_tokens', [
                 'tokenable_type' => User::class,
-                'tokenable_id' => $user->id
+                'tokenable_id' => $user->id,
             ]);
         });
     });
 
     describe('User API', function () {
-        
+
         test('authenticated user can get their profile', function () {
             $user = User::factory()->create();
             $token = $user->createToken('test-token')->plainTextToken;
 
             $response = $this->withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => 'application/json'
+                'Authorization' => 'Bearer '.$token,
+                'Accept' => 'application/json',
             ])->getJson('/api/user');
 
             $response->assertStatus(200)
                 ->assertJson([
                     'id' => $user->id,
                     'name' => $user->name,
-                    'email' => $user->email
+                    'email' => $user->email,
                 ]);
         });
 
@@ -205,33 +204,33 @@ describe('API Authentication', function () {
 
             $response->assertStatus(401)
                 ->assertJson([
-                    'message' => 'Unauthenticated.'
+                    'message' => 'Unauthenticated.',
                 ]);
         });
 
         test('user with invalid token cannot get profile', function () {
             $response = $this->withHeaders([
                 'Authorization' => 'Bearer invalid-token',
-                'Accept' => 'application/json'
+                'Accept' => 'application/json',
             ])->getJson('/api/user');
 
             $response->assertStatus(401)
                 ->assertJson([
-                    'message' => 'Unauthenticated.'
+                    'message' => 'Unauthenticated.',
                 ]);
         });
     });
 
     describe('Token Refresh API', function () {
-        
+
         test('authenticated user can refresh their token', function () {
             $user = User::factory()->create();
             $token = $user->createToken('test-token')->plainTextToken;
 
             $response = $this->withHeaders([
-                'Authorization' => 'Bearer ' . $token,
+                'Authorization' => 'Bearer '.$token,
                 'Accept' => 'application/json',
-                'Content-Type' => 'application/json'
+                'Content-Type' => 'application/json',
             ])->postJson('/api/refresh-token');
 
             $response->assertStatus(200)
@@ -239,10 +238,10 @@ describe('API Authentication', function () {
                     'user' => [
                         'id',
                         'name',
-                        'email'
+                        'email',
                     ],
                     'token',
-                    'message'
+                    'message',
                 ]);
 
             // Verify old token was deleted and new one created
@@ -254,23 +253,23 @@ describe('API Authentication', function () {
 
             $response->assertStatus(401)
                 ->assertJson([
-                    'message' => 'Unauthenticated.'
+                    'message' => 'Unauthenticated.',
                 ]);
         });
     });
 
     describe('Complete Authentication Flow', function () {
-        
+
         test('complete login, authenticated request, and logout flow', function () {
             $user = User::factory()->create([
                 'email' => 'flow@example.com',
-                'password' => bcrypt('password123')
+                'password' => bcrypt('password123'),
             ]);
 
             // 1. Login
             $loginResponse = $this->postJson('/api/login', [
                 'email' => 'flow@example.com',
-                'password' => 'password123'
+                'password' => 'password123',
             ]);
 
             $loginResponse->assertStatus(200);
@@ -279,52 +278,52 @@ describe('API Authentication', function () {
             // Verify token was created in database
             $this->assertDatabaseHas('personal_access_tokens', [
                 'tokenable_type' => User::class,
-                'tokenable_id' => $user->id
+                'tokenable_id' => $user->id,
             ]);
 
             // 2. Make authenticated request
             $userResponse = $this->withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => 'application/json'
+                'Authorization' => 'Bearer '.$token,
+                'Accept' => 'application/json',
             ])->getJson('/api/user');
 
             $userResponse->assertStatus(200)
                 ->assertJson([
                     'id' => $user->id,
-                    'email' => 'flow@example.com'
+                    'email' => 'flow@example.com',
                 ]);
 
             // 3. Logout
             $logoutResponse = $this->withHeaders([
-                'Authorization' => 'Bearer ' . $token,
+                'Authorization' => 'Bearer '.$token,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
-                'Content-Length' => '0'
+                'Content-Length' => '0',
             ])->postJson('/api/logout', []);
 
             $logoutResponse->assertStatus(200)
                 ->assertJson([
-                    'message' => 'Logged out successfully'
+                    'message' => 'Logged out successfully',
                 ]);
 
             // Verify token was deleted from database
             $this->assertDatabaseMissing('personal_access_tokens', [
                 'tokenable_type' => User::class,
-                'tokenable_id' => $user->id
+                'tokenable_id' => $user->id,
             ]);
 
             // 4. Create a new request instance to avoid any caching
             $this->refreshApplication();
-            
+
             // Verify token is invalidated by trying to use it
             $invalidResponse = $this->withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => 'application/json'
+                'Authorization' => 'Bearer '.$token,
+                'Accept' => 'application/json',
             ])->getJson('/api/user');
 
             $invalidResponse->assertStatus(401)
                 ->assertJson([
-                    'message' => 'Unauthenticated.'
+                    'message' => 'Unauthenticated.',
                 ]);
         });
     });

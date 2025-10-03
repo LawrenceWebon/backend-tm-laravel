@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TaskRequest;
 use App\Http\Resources\TaskResource;
+use App\Models\Task;
 use App\Repository\TaskRepositoryInterface;
 use Illuminate\Http\Request;
 
@@ -56,11 +57,11 @@ class TaskController extends Controller
     public function show(string $id)
     {
         $task = $this->taskRepository->find($id);
-        
-        if (!$task) {
+
+        if (! $task) {
             return response()->json(['message' => 'Task not found'], 404);
         }
-        
+
         $this->authorize('view', $task);
 
         return new TaskResource($task);
@@ -72,11 +73,11 @@ class TaskController extends Controller
     public function update(TaskRequest $request, string $id)
     {
         $task = $this->taskRepository->find($id);
-        
-        if (!$task) {
+
+        if (! $task) {
             return response()->json(['message' => 'Task not found'], 404);
         }
-        
+
         $this->authorize('update', $task);
 
         $this->taskRepository->update($id, $request->validated());
@@ -90,11 +91,11 @@ class TaskController extends Controller
     public function destroy(string $id)
     {
         $task = $this->taskRepository->find($id);
-        
-        if (!$task) {
+
+        if (! $task) {
             return response()->json(['message' => 'Task not found'], 404);
         }
-        
+
         $this->authorize('delete', $task);
 
         $this->taskRepository->delete($id);
@@ -113,7 +114,19 @@ class TaskController extends Controller
             'tasks.*.order' => 'required|integer',
         ]);
 
-        $this->taskRepository->reorder($request->tasks);
+        $tasks = $request->input('tasks');
+
+        // Verify user owns all tasks
+        foreach ($tasks as $taskData) {
+            $task = Task::findOrFail($taskData['id']);
+            $this->authorize('update', $task);
+        }
+
+        // Update task orders
+        foreach ($tasks as $taskData) {
+            Task::where('id', $taskData['id'])
+                ->update(['order' => $taskData['order']]);
+        }
 
         return response()->json(['message' => 'Tasks reordered successfully']);
     }

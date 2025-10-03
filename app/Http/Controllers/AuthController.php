@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -49,7 +48,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -70,7 +69,7 @@ class AuthController extends Controller
     {
         // Delete the current access token if it's a persistent token
         $token = $request->user()->currentAccessToken();
-        
+
         if ($token && method_exists($token, 'delete')) {
             $token->delete();
         }
@@ -92,16 +91,16 @@ class AuthController extends Controller
     public function refreshToken(Request $request)
     {
         $user = $request->user();
-        
+
         // Delete current token
         $token = $user->currentAccessToken();
         if ($token && method_exists($token, 'delete')) {
             $token->delete();
         }
-        
+
         // Create new token
         $token = $user->createToken('auth_token')->plainTextToken;
-        
+
         return response()->json([
             'user' => $user,
             'token' => $token,
