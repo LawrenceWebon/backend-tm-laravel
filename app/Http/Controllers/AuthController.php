@@ -26,8 +26,8 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Create a token for the user with 10 minute expiration
-        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(10))->plainTextToken;
+        // Create a token for the user with 30 minute expiration
+        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(30))->plainTextToken;
 
         return response()->json([
             'user' => $user,
@@ -54,7 +54,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(30))->plainTextToken;
 
         return response()->json([
             'user' => $user,
@@ -98,8 +98,8 @@ class AuthController extends Controller
             $token->delete();
         }
 
-        // Create new token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Create new token with 30-minute expiration
+        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(30))->plainTextToken;
 
         return response()->json([
             'user' => $user,

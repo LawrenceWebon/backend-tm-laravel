@@ -44,6 +44,13 @@ describe('API Authentication', function () {
                 'tokenable_type' => User::class,
                 'tokenable_id' => $user->id,
             ]);
+
+            // Verify token has 30-minute expiration
+            $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_id', $user->id)->first();
+            $this->assertNotNull($tokenRecord);
+            $this->assertNotNull($tokenRecord->expires_at);
+            $this->assertTrue($tokenRecord->expires_at->isFuture());
+            $this->assertTrue($tokenRecord->expires_at->diffInMinutes(now()) <= 30);
         });
 
         test('user cannot login with invalid email', function () {
@@ -255,6 +262,98 @@ describe('API Authentication', function () {
                 ->assertJson([
                     'message' => 'Unauthenticated.',
                 ]);
+        });
+    });
+
+    describe('Token Expiration', function () {
+
+        test('login creates token with 30-minute expiration', function () {
+            $user = User::factory()->create([
+                'email' => 'expiration@example.com',
+                'password' => bcrypt('password123'),
+            ]);
+
+            $response = $this->postJson('/api/login', [
+                'email' => 'expiration@example.com',
+                'password' => 'password123',
+            ]);
+
+            $response->assertStatus(200);
+
+            // Verify token expiration
+            $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_id', $user->id)->first();
+            $this->assertNotNull($tokenRecord);
+            $this->assertNotNull($tokenRecord->expires_at);
+            
+            // Check that expiration is approximately 30 minutes from now
+            $expirationMinutes = now()->diffInMinutes($tokenRecord->expires_at);
+            $this->assertGreaterThanOrEqual(29, $expirationMinutes);
+            $this->assertLessThanOrEqual(30, $expirationMinutes);
+        });
+
+        test('refresh token creates new token with 30-minute expiration', function () {
+            $user = User::factory()->create();
+            $token = $user->createToken('test-token')->plainTextToken;
+
+            $response = $this->withHeaders([
+                'Authorization' => 'Bearer '.$token,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->postJson('/api/refresh-token');
+
+            $response->assertStatus(200);
+
+            // Verify new token has 30-minute expiration
+            $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_id', $user->id)->first();
+            $this->assertNotNull($tokenRecord);
+            $this->assertNotNull($tokenRecord->expires_at);
+            
+            $expirationMinutes = now()->diffInMinutes($tokenRecord->expires_at);
+            $this->assertGreaterThanOrEqual(29, $expirationMinutes);
+            $this->assertLessThanOrEqual(30, $expirationMinutes);
+        });
+
+        test('expired token is rejected by API', function () {
+            $user = User::factory()->create();
+            
+            // Create a token that expires in 1 second
+            $token = $user->createToken('expired-token', ['*'], now()->addSeconds(1))->plainTextToken;
+            
+            // Wait for token to expire
+            sleep(2);
+
+            $response = $this->withHeaders([
+                'Authorization' => 'Bearer '.$token,
+                'Accept' => 'application/json',
+            ])->getJson('/api/user');
+
+            $response->assertStatus(401)
+                ->assertJson([
+                    'message' => 'Unauthenticated.',
+                ]);
+        });
+
+        test('register creates token with 30-minute expiration', function () {
+            $userData = [
+                'name' => 'Test User',
+                'email' => 'register@example.com',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+            ];
+
+            $response = $this->postJson('/api/register', $userData);
+
+            $response->assertStatus(201);
+
+            // Verify token expiration
+            $user = User::where('email', 'register@example.com')->first();
+            $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_id', $user->id)->first();
+            $this->assertNotNull($tokenRecord);
+            $this->assertNotNull($tokenRecord->expires_at);
+            
+            $expirationMinutes = now()->diffInMinutes($tokenRecord->expires_at);
+            $this->assertGreaterThanOrEqual(29, $expirationMinutes);
+            $this->assertLessThanOrEqual(30, $expirationMinutes);
         });
     });
 
