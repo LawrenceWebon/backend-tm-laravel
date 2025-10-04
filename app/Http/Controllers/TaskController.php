@@ -93,14 +93,28 @@ class TaskController extends Controller
         $task = $this->taskRepository->find($id);
 
         if (! $task) {
-            return response()->json(['message' => 'Task not found'], 404);
+            return response()->json([
+                'message' => 'Task not found',
+                'code' => 'TASK_NOT_FOUND'
+            ], 404);
         }
 
         $this->authorize('delete', $task);
 
+        // Check if already soft deleted
+        if ($task->trashed()) {
+            return response()->json([
+                'message' => 'Task already deleted',
+                'code' => 'TASK_ALREADY_DELETED'
+            ], 200);
+        }
+
         $this->taskRepository->delete($id);
 
-        return response()->json(null, 204);
+        return response()->json([
+            'message' => 'Task deleted successfully',
+            'code' => 'TASK_DELETED'
+        ], 200);
     }
 
     /**

@@ -65,7 +65,7 @@ class TaskRepository implements TaskRepositoryInterface
      */
     public function find(int $id): ?Task
     {
-        return Task::find($id);
+        return Task::withTrashed()->find($id);
     }
 
     /**
