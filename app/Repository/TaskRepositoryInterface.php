@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Models\Task;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface TaskRepositoryInterface
 {
@@ -10,6 +11,11 @@ interface TaskRepositoryInterface
      * Get all tasks for a user with optional filters
      */
     public function getAllByUser(int $userId, ?string $date = null, ?string $status = null, ?string $search = null, ?string $priority = null, ?string $sort = null);
+
+    /**
+     * Get paginated tasks for a user with optional filters
+     */
+    public function getPaginatedByUser(int $userId, ?string $date = null, ?string $status = null, ?string $search = null, ?string $priority = null, ?string $sort = null, int $perPage = 10, int $page = 1): LengthAwarePaginator;
 
     /**
      * Create a new task

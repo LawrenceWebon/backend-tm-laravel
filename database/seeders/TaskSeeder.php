@@ -13,49 +13,156 @@ class TaskSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create test user
-        $user = User::create([
-            'name' => 'Matt',
-            'email' => 'matt@goteam.com',
-            'password' => Hash::make('password'),
-        ]);
+        // Create test user or get existing
+        $user = User::firstOrCreate(
+            ['email' => 'matt@goteam.com'],
+            [
+                'name' => 'Matt',
+                'password' => Hash::make('password'),
+            ]
+        );
 
-        // Create sample tasks
+        // Create sample tasks for October 2nd to test pagination
         $tasks = [
             [
                 'title' => 'Complete project documentation',
                 'status' => 'pending',
-                'date' => now()->addDays(1),
+                'date' => '2025-10-02',
                 'priority' => 'high',
                 'order' => 1,
             ],
             [
                 'title' => 'Review code changes',
                 'status' => 'pending',
-                'date' => now()->addDays(2),
+                'date' => '2025-10-02',
                 'priority' => 'medium',
                 'order' => 2,
             ],
             [
                 'title' => 'Update dependencies',
                 'status' => 'completed',
-                'date' => now()->subDays(1),
+                'date' => '2025-10-02',
                 'priority' => 'low',
                 'order' => 3,
             ],
             [
                 'title' => 'Write unit tests',
                 'status' => 'pending',
-                'date' => now()->addDays(3),
+                'date' => '2025-10-02',
                 'priority' => 'high',
                 'order' => 4,
             ],
             [
                 'title' => 'Deploy to staging',
                 'status' => 'pending',
-                'date' => now()->addDays(5),
+                'date' => '2025-10-02',
                 'priority' => 'medium',
                 'order' => 5,
+            ],
+            [
+                'title' => 'Fix authentication bug',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'high',
+                'order' => 6,
+            ],
+            [
+                'title' => 'Optimize database queries',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'medium',
+                'order' => 7,
+            ],
+            [
+                'title' => 'Update user interface',
+                'status' => 'completed',
+                'date' => '2025-10-02',
+                'priority' => 'low',
+                'order' => 8,
+            ],
+            [
+                'title' => 'Implement new feature',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'high',
+                'order' => 9,
+            ],
+            [
+                'title' => 'Code review for PR #123',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'medium',
+                'order' => 10,
+            ],
+            [
+                'title' => 'Update API documentation',
+                'status' => 'completed',
+                'date' => '2025-10-02',
+                'priority' => 'low',
+                'order' => 11,
+            ],
+            [
+                'title' => 'Fix responsive design issues',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'medium',
+                'order' => 12,
+            ],
+            [
+                'title' => 'Add error handling',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'high',
+                'order' => 13,
+            ],
+            [
+                'title' => 'Update README file',
+                'status' => 'completed',
+                'date' => '2025-10-02',
+                'priority' => 'low',
+                'order' => 14,
+            ],
+            [
+                'title' => 'Refactor legacy code',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'medium',
+                'order' => 15,
+            ],
+            [
+                'title' => 'Set up monitoring',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'high',
+                'order' => 16,
+            ],
+            [
+                'title' => 'Update test coverage',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'medium',
+                'order' => 17,
+            ],
+            [
+                'title' => 'Clean up unused code',
+                'status' => 'completed',
+                'date' => '2025-10-02',
+                'priority' => 'low',
+                'order' => 18,
+            ],
+            [
+                'title' => 'Implement caching strategy',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'high',
+                'order' => 19,
+            ],
+            [
+                'title' => 'Update security policies',
+                'status' => 'pending',
+                'date' => '2025-10-02',
+                'priority' => 'medium',
+                'order' => 20,
             ],
         ];
 

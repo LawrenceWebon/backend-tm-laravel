@@ -284,7 +284,7 @@ describe('API Authentication', function () {
             $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_id', $user->id)->first();
             $this->assertNotNull($tokenRecord);
             $this->assertNotNull($tokenRecord->expires_at);
-            
+
             // Check that expiration is approximately 30 minutes from now
             $expirationMinutes = now()->diffInMinutes($tokenRecord->expires_at);
             $this->assertGreaterThanOrEqual(29, $expirationMinutes);
@@ -307,7 +307,7 @@ describe('API Authentication', function () {
             $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_id', $user->id)->first();
             $this->assertNotNull($tokenRecord);
             $this->assertNotNull($tokenRecord->expires_at);
-            
+
             $expirationMinutes = now()->diffInMinutes($tokenRecord->expires_at);
             $this->assertGreaterThanOrEqual(29, $expirationMinutes);
             $this->assertLessThanOrEqual(30, $expirationMinutes);
@@ -315,10 +315,10 @@ describe('API Authentication', function () {
 
         test('expired token is rejected by API', function () {
             $user = User::factory()->create();
-            
+
             // Create a token that expires in 1 second
             $token = $user->createToken('expired-token', ['*'], now()->addSeconds(1))->plainTextToken;
-            
+
             // Wait for token to expire
             sleep(2);
 
@@ -350,7 +350,7 @@ describe('API Authentication', function () {
             $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_id', $user->id)->first();
             $this->assertNotNull($tokenRecord);
             $this->assertNotNull($tokenRecord->expires_at);
-            
+
             $expirationMinutes = now()->diffInMinutes($tokenRecord->expires_at);
             $this->assertGreaterThanOrEqual(29, $expirationMinutes);
             $this->assertLessThanOrEqual(30, $expirationMinutes);

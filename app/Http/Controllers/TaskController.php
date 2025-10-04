@@ -22,6 +22,27 @@ class TaskController extends Controller
      */
     public function index(Request $request)
     {
+        // Check if pagination is requested
+        $paginate = $request->boolean('paginate', false);
+        $perPage = $request->integer('per_page', 10);
+        $page = $request->integer('page', 1);
+
+        if ($paginate) {
+            $tasks = $this->taskRepository->getPaginatedByUser(
+                $request->user()->id,
+                $request->date,
+                $request->status,
+                $request->search,
+                $request->priority,
+                $request->sort,
+                $perPage,
+                $page
+            );
+
+            return TaskResource::collection($tasks);
+        }
+
+        // Default behavior - return all tasks
         $tasks = $this->taskRepository->getAllByUser(
             $request->user()->id,
             $request->date,
@@ -95,7 +116,7 @@ class TaskController extends Controller
         if (! $task) {
             return response()->json([
                 'message' => 'Task not found',
-                'code' => 'TASK_NOT_FOUND'
+                'code' => 'TASK_NOT_FOUND',
             ], 404);
         }
 
@@ -105,7 +126,7 @@ class TaskController extends Controller
         if ($task->trashed()) {
             return response()->json([
                 'message' => 'Task already deleted',
-                'code' => 'TASK_ALREADY_DELETED'
+                'code' => 'TASK_ALREADY_DELETED',
             ], 200);
         }
 
@@ -113,7 +134,7 @@ class TaskController extends Controller
 
         return response()->json([
             'message' => 'Task deleted successfully',
-            'code' => 'TASK_DELETED'
+            'code' => 'TASK_DELETED',
         ], 200);
     }
 
