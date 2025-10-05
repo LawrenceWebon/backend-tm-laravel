@@ -153,15 +153,15 @@ class TaskController extends Controller
 
         // Verify user owns all tasks
         foreach ($tasks as $taskData) {
-            $task = Task::findOrFail($taskData['id']);
+            $task = $this->taskRepository->find($taskData['id']);
+            if (!$task) {
+                abort(404, 'Task not found');
+            }
             $this->authorize('update', $task);
         }
 
-        // Update task orders
-        foreach ($tasks as $taskData) {
-            Task::where('id', $taskData['id'])
-                ->update(['order' => $taskData['order']]);
-        }
+        // Use repository to reorder tasks
+        $this->taskRepository->reorder($tasks);
 
         return response()->json(['message' => 'Tasks reordered successfully']);
     }

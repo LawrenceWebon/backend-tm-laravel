@@ -13,14 +13,13 @@ class TaskSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create test user or get existing
-        $user = User::firstOrCreate(
-            ['email' => 'matt@goteam.com'],
-            [
-                'name' => 'Matt',
-                'password' => Hash::make('password'),
-            ]
-        );
+        // Get the existing user created by UserSeeder
+        $user = User::where('email', 'matt@goteam.com')->first();
+        
+        if (!$user) {
+            $this->command->error('User matt@goteam.com not found. Please run UserSeeder first.');
+            return;
+        }
 
         // Create sample tasks for October 2nd to test pagination
         $tasks = [
