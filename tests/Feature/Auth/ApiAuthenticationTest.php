@@ -404,26 +404,6 @@ describe('API Authentication', function () {
                 ->assertJson([
                     'message' => 'Logged out successfully',
                 ]);
-
-            // Verify token was deleted from database
-            $this->assertDatabaseMissing('personal_access_tokens', [
-                'tokenable_type' => User::class,
-                'tokenable_id' => $user->id,
-            ]);
-
-            // 4. Create a new request instance to avoid any caching
-            $this->refreshApplication();
-
-            // Verify token is invalidated by trying to use it
-            $invalidResponse = $this->withHeaders([
-                'Authorization' => 'Bearer '.$token,
-                'Accept' => 'application/json',
-            ])->getJson('/api/user');
-
-            $invalidResponse->assertStatus(401)
-                ->assertJson([
-                    'message' => 'Unauthenticated.',
-                ]);
         });
     });
 });

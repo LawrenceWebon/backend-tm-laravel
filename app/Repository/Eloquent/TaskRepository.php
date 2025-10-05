@@ -17,7 +17,7 @@ class TaskRepository implements TaskRepositoryInterface
         $query = Task::where('user_id', $userId);
 
         if ($date) {
-            $query->where('date', $date);
+            $query->whereDate('date', $date);
         }
 
         if ($status) {
@@ -61,7 +61,7 @@ class TaskRepository implements TaskRepositoryInterface
         $query = Task::where('user_id', $userId);
 
         if ($date) {
-            $query->where('date', $date);
+            $query->whereDate('date', $date);
         }
 
         if ($status) {
