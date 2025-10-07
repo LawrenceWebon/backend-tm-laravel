@@ -1,0 +1,906 @@
+openapi: 3.0.4
+info:
+  title: Task Management API
+  description: |
+    A robust Laravel 12 API backend for a task management application, built with modern Laravel best practices and following the repository pattern.
+    
+    ## Features
+    - User Authentication with Laravel Fortify and Sanctum
+    - Task Management with full CRUD operations
+    - Repository Pattern implementation
+    - Policy-based authorization
+    - Task reordering and filtering
+    - Search functionality
+    - Pagination support
+    
+    ## Authentication
+    This API uses Laravel Sanctum for token-based authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer {token}
+    ```
+  version: 1.0.0
+  contact:
+    name: Task Management API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000/api
+    description: Development server
+  - url: https://api.example.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Tasks
+    description: Task management operations
+  - name: System
+    description: System utilities
+
+paths:
+  /csrf-cookie:
+    get:
+      tags:
+        - System
+      summary: Get CSRF cookie
+      description: Retrieve CSRF token for form submissions
+      responses:
+        '200':
+          description: CSRF token retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  csrf_token:
+                    type: string
+                    example: "abc123def456"
+
+  /register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - password_confirmation
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+                  example: "john@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+                password_confirmation:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    example: "1|abc123def456"
+                  message:
+                    type: string
+                    example: "User registered successfully"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user and return access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "matt@goteam.com"
+                password:
+                  type: string
+                  example: "password"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    example: "1|abc123def456"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Revoke the current access token
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+
+  /refresh-token:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Generate a new access token and revoke the current one
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    example: "2|def456ghi789"
+                  message:
+                    type: string
+                    example: "Token refreshed successfully"
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+
+  /me:
+    get:
+      tags:
+        - Authentication
+      summary: Get authenticated user
+      description: Retrieve the currently authenticated user's information
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+
+  /user:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Alternative endpoint to get the current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+
+  /forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      description: Send a password reset link to the user's email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "matt@goteam.com"
+      responses:
+        '200':
+          description: Password reset link sent (if email exists)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "If an account with that email exists, we have sent a password reset link."
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      description: Reset user password using the token from email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - token
+                - password
+                - password_confirmation
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "matt@goteam.com"
+                token:
+                  type: string
+                  example: "abc123def456"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "newpassword123"
+                password_confirmation:
+                  type: string
+                  minLength: 6
+                  example: "newpassword123"
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password has been reset successfully."
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid or expired reset token."
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User not found."
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: List user's tasks
+      description: Retrieve a list of tasks for the authenticated user with optional filtering and pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: Filter tasks by specific date (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2025-10-02"
+        - name: status
+          in: query
+          description: Filter tasks by status
+          required: false
+          schema:
+            type: string
+            enum: [pending, completed]
+            example: "pending"
+        - name: priority
+          in: query
+          description: Filter tasks by priority
+          required: false
+          schema:
+            type: string
+            enum: [high, medium, low]
+            example: "high"
+        - name: search
+          in: query
+          description: Search in task titles
+          required: false
+          schema:
+            type: string
+            example: "project documentation"
+        - name: sort
+          in: query
+          description: Sort tasks by field
+          required: false
+          schema:
+            type: string
+            enum: [priority, title, order]
+            example: "priority"
+        - name: paginate
+          in: query
+          description: Enable pagination
+          required: false
+          schema:
+            type: boolean
+            example: true
+        - name: per_page
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 10
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  - $ref: '#/components/schemas/PaginatedTasks'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+
+    post:
+      tags:
+        - Tasks
+      summary: Create a new task
+      description: Create a new task for the authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - date
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                  example: "Complete project documentation"
+                date:
+                  type: string
+                  format: date
+                  example: "2025-10-02"
+                priority:
+                  type: string
+                  enum: [high, medium, low]
+                  example: "high"
+                order:
+                  type: integer
+                  example: 1
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /tasks/{id}:
+    get:
+      tags:
+        - Tasks
+      summary: Get a specific task
+      description: Retrieve a specific task by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Task retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+        '403':
+          description: Forbidden - Task belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+
+    put:
+      tags:
+        - Tasks
+      summary: Update a task
+      description: Update an existing task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                  example: "Updated task title"
+                date:
+                  type: string
+                  format: date
+                  example: "2025-10-03"
+                status:
+                  type: string
+                  enum: [pending, completed]
+                  example: "completed"
+                priority:
+                  type: string
+                  enum: [high, medium, low]
+                  example: "medium"
+                order:
+                  type: integer
+                  example: 2
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+        '403':
+          description: Forbidden - Task belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+    delete:
+      tags:
+        - Tasks
+      summary: Delete a task
+      description: Soft delete a task (can be recovered)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Task deleted successfully"
+                  code:
+                    type: string
+                    example: "TASK_DELETED"
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+        '403':
+          description: Forbidden - Task belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+
+  /tasks/reorder:
+    put:
+      tags:
+        - Tasks
+      summary: Reorder tasks
+      description: Update the order of multiple tasks
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tasks
+              properties:
+                tasks:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - order
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      order:
+                        type: integer
+                        example: 2
+                  example:
+                    - id: 1
+                      order: 2
+                    - id: 2
+                      order: 1
+      responses:
+        '200':
+          description: Tasks reordered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tasks reordered successfully"
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthenticatedError'
+        '403':
+          description: Forbidden - One or more tasks belong to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: One or more tasks not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Laravel Sanctum token. Include the token in the Authorization header:
+        ```
+        Authorization: Bearer {token}
+        ```
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Matt"
+        email:
+          type: string
+          format: email
+          example: "matt@goteam.com"
+        email_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-10-01T10:00:00.000000Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-10-01T10:00:00.000000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-10-01T10:00:00.000000Z"
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Complete project documentation"
+        status:
+          type: string
+          enum: [pending, completed]
+          example: "pending"
+        date:
+          type: string
+          format: date
+          example: "2025-10-02"
+        priority:
+          type: string
+          enum: [high, medium, low]
+          example: "high"
+        order:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-10-01T10:00:00.000000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-10-01T10:00:00.000000Z"
+
+    PaginatedTasks:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        links:
+          type: object
+          properties:
+            first:
+              type: string
+              example: "http://localhost:8000/api/tasks?page=1"
+            last:
+              type: string
+              example: "http://localhost:8000/api/tasks?page=5"
+            prev:
+              type: string
+              nullable: true
+              example: null
+            next:
+              type: string
+              nullable: true
+              example: "http://localhost:8000/api/tasks?page=2"
+        meta:
+          type: object
+          properties:
+            current_page:
+              type: integer
+              example: 1
+            from:
+              type: integer
+              example: 1
+            last_page:
+              type: integer
+              example: 5
+            per_page:
+              type: integer
+              example: 10
+            to:
+              type: integer
+              example: 10
+            total:
+              type: integer
+              example: 50
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "The given data was invalid."
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email: ["The email field is required."]
+            password: ["The password field is required."]
+
+    UnauthenticatedError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Unauthenticated."
+
+    ForbiddenError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "This action is unauthorized."
+
+    NotFoundError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "No query results for model [App\\Models\\Task] 1"
+
+security:
+  - bearerAuth: []
