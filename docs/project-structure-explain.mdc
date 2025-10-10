@@ -1,0 +1,404 @@
+---
+description: Comprehensive explanation of the Laravel 12 backend project structure for the Task Management system
+globs: **/*
+alwaysApply: true
+---
+
+# Backend Project Structure Explanation
+
+This document explains the file and folder structure of the Laravel 12 backend application for the Task Management system.
+
+## Overview
+
+The project follows **Laravel's MVC (Model-View-Controller) architecture** with additional patterns like **Repository Pattern**, **Service Layer**, and **API Resource Pattern**. It's built using Laravel 12 with modern PHP 8.2+ features and includes comprehensive testing, authentication, and API capabilities.
+
+## Root Directory Structure
+
+```
+backend-laravel12/
+├── app/                    # Main application code (MVC + additional layers)
+├── bootstrap/              # Application bootstrap files
+├── config/                 # Configuration files
+├── database/               # Database-related files (migrations, seeders, factories)
+├── docs/                   # Project documentation
+├── public/                 # Web server document root
+├── resources/              # Views, assets, and language files
+├── routes/                 # Route definitions
+├── storage/                # File storage and logs
+├── tests/                  # Test files (Feature, Unit, Integration)
+├── vendor/                 # Composer dependencies
+├── artisan                 # Laravel command-line interface
+├── composer.json           # PHP dependencies and scripts
+├── composer.lock           # Locked dependency versions
+├── phpunit.xml             # PHPUnit test configuration
+├── pint.json               # Laravel Pint code style configuration
+├── vite.config.js          # Vite build configuration
+└── compose.yaml            # Docker Compose configuration
+```
+
+## App Directory Structure (`app/`)
+
+The `app/` directory contains the core application logic following Laravel's conventions with additional architectural patterns.
+
+### 1. Console Directory (`app/Console/`)
+
+**Purpose**: Contains Artisan console commands for CLI operations.
+
+```
+app/Console/
+└── Commands/
+    └── ViewEmails.php      # Custom command for viewing emails
+```
+
+**Key Features**:
+- **Custom Commands**: `ViewEmails.php` - Command to view and manage email templates
+- **Scheduled Tasks**: Can contain scheduled commands for cron jobs
+- **CLI Tools**: Extends Laravel's built-in commands
+
+### 2. Http Directory (`app/Http/`)
+
+**Purpose**: Contains HTTP-related classes that handle web requests and responses.
+
+```
+app/Http/
+├── Controllers/            # Request handling controllers
+│   ├── Auth/              # Authentication-specific controllers
+│   │   └── VerifyEmailController.php
+│   ├── AuthController.php # Main authentication controller
+│   ├── Controller.php     # Base controller class
+│   └── TaskController.php # Task management controller
+├── Middleware/            # HTTP middleware
+│   └── CustomEnsureFrontendRequestsAreStateful.php
+├── Requests/              # Form request validation
+│   └── TaskRequest.php    # Task validation rules
+└── Resources/             # API resource transformers
+    └── TaskResource.php   # Task API response formatting
+```
+
+#### Controllers
+- **AuthController**: Handles authentication (login, register, logout, password reset)
+- **TaskController**: Manages task CRUD operations with repository pattern
+- **VerifyEmailController**: Handles email verification process
+- **Controller**: Base controller with common functionality
+
+#### Middleware
+- **CustomEnsureFrontendRequestsAreStateful**: Custom middleware for SPA authentication
+
+#### Requests
+- **TaskRequest**: Form request validation for task operations with custom rules
+
+#### Resources
+- **TaskResource**: API resource for consistent task data formatting
+
+### 3. Livewire Directory (`app/Livewire/`)
+
+**Purpose**: Contains Livewire components for reactive UI functionality.
+
+```
+app/Livewire/
+└── Actions/
+    └── Logout.php         # Livewire logout action component
+```
+
+**Key Features**:
+- **Reactive Components**: Server-side rendered components with client-side interactivity
+- **Actions**: Reusable action components like logout functionality
+- **Real-time Updates**: Components can update without full page refresh
+
+### 4. Mail Directory (`app/Mail/`)
+
+**Purpose**: Contains mail classes for sending emails.
+
+```
+app/Mail/
+└── ResetPasswordMail.php  # Password reset email template
+```
+
+**Key Features**:
+- **Mailable Classes**: Structured email templates
+- **ResetPasswordMail**: Handles password reset email notifications
+- **Email Templates**: Can include Blade templates for email content
+
+### 5. Models Directory (`app/Models/`)
+
+**Purpose**: Contains Eloquent models representing database entities.
+
+```
+app/Models/
+├── Task.php               # Task model with relationships and business logic
+└── User.php               # User model with authentication features
+```
+
+**Key Features**:
+- **Eloquent Models**: Database abstraction with relationships
+- **Task Model**: Includes soft deletes, priority levels, user relationships
+- **User Model**: Authentication, two-factor auth, password reset capabilities
+- **Mass Assignment Protection**: Fillable attributes and guarded properties
+- **Casts**: Automatic type casting for dates, integers, enums
+
+### 6. Policies Directory (`app/Policies/`)
+
+**Purpose**: Contains authorization policies for controlling access to resources.
+
+```
+app/Policies/
+└── TaskPolicy.php         # Task authorization rules
+```
+
+**Key Features**:
+- **Authorization Logic**: Defines who can perform what actions on tasks
+- **Gates and Policies**: Laravel's authorization system
+- **Resource Protection**: Ensures users can only access their own tasks
+
+### 7. Providers Directory (`app/Providers/`)
+
+**Purpose**: Contains service providers for dependency injection and service registration.
+
+```
+app/Providers/
+├── AppServiceProvider.php        # Main application service provider
+├── FortifyServiceProvider.php    # Laravel Fortify authentication
+├── RepositoryServiceProvider.php # Repository pattern service binding
+└── VoltServiceProvider.php       # Livewire Volt service provider
+```
+
+**Key Features**:
+- **Dependency Injection**: Service container configuration
+- **Repository Binding**: Interface-to-implementation binding
+- **Service Registration**: Third-party service configuration
+- **Authentication Setup**: Fortify configuration for auth features
+
+### 8. Repository Directory (`app/Repository/`)
+
+**Purpose**: Implements the Repository Pattern for data access abstraction.
+
+```
+app/Repository/
+├── Eloquent/
+│   └── TaskRepository.php        # Eloquent implementation of task repository
+└── TaskRepositoryInterface.php   # Task repository interface contract
+```
+
+**Key Features**:
+- **Repository Pattern**: Abstracts data access logic
+- **Interface Segregation**: Clear contracts for data operations
+- **Testability**: Easy to mock for unit testing
+- **Flexibility**: Can switch between different data sources
+- **Business Logic Separation**: Keeps data access separate from business logic
+
+## Database Directory (`database/`)
+
+**Purpose**: Contains all database-related files including migrations, seeders, and factories.
+
+```
+database/
+├── database.sqlite         # SQLite database file (development)
+├── factories/              # Model factories for testing
+│   ├── TaskFactory.php     # Task model factory
+│   └── UserFactory.php     # User model factory
+├── migrations/             # Database schema migrations
+│   ├── 0001_01_01_000000_create_users_table.php
+│   ├── 0001_01_01_000001_create_cache_table.php
+│   ├── 0001_01_01_000002_create_jobs_table.php
+│   ├── 2025_09_02_075243_add_two_factor_columns_to_users_table.php
+│   ├── 2025_10_01_154828_create_personal_access_tokens_table.php
+│   ├── 2025_10_02_033019_create_tasks_table.php
+│   ├── 2025_10_02_164315_add_soft_deletes_to_tasks_table.php
+│   ├── 2025_10_03_101944_update_tasks_priority_enum.php
+│   └── 2025_10_05_144006_create_mail_table.php
+└── seeders/                # Database seeders
+    ├── DatabaseSeeder.php  # Main seeder coordinator
+    ├── TaskSeeder.php      # Task data seeder
+    └── UserSeeder.php      # User data seeder
+```
+
+### Migrations
+- **Version Control**: Database schema changes tracked over time
+- **Rollback Support**: Can undo database changes
+- **Team Collaboration**: Consistent database structure across environments
+- **Key Migrations**:
+  - Users table with authentication fields
+  - Tasks table with priority, status, and soft deletes
+  - Personal access tokens for API authentication
+  - Two-factor authentication support
+
+### Factories
+- **Test Data Generation**: Create realistic test data for models
+- **Faker Integration**: Generate fake but realistic data
+- **Relationship Support**: Create related models with proper relationships
+
+### Seeders
+- **Database Population**: Fill database with initial or test data
+- **Development Data**: Consistent data for development and testing
+- **Production Seeds**: Safe data for production environments
+
+## Configuration Directory (`config/`)
+
+**Purpose**: Contains all application configuration files.
+
+```
+config/
+├── app.php                 # Main application configuration
+├── auth.php                # Authentication configuration
+├── cache.php               # Cache configuration
+├── cors.php                # CORS settings
+├── database.php            # Database connection settings
+├── filesystems.php         # File storage configuration
+├── fortify.php             # Laravel Fortify settings
+├── logging.php             # Logging configuration
+├── mail.php                # Email configuration
+├── queue.php               # Queue configuration
+├── sanctum.php             # Laravel Sanctum API authentication
+├── services.php            # Third-party service configuration
+└── session.php             # Session configuration
+```
+
+**Key Configurations**:
+- **Database**: SQLite for development, configurable for production
+- **Authentication**: Fortify + Sanctum for SPA authentication
+- **CORS**: Configured for frontend communication
+- **Mail**: Email service configuration
+- **Cache**: Redis/file-based caching options
+
+## Routes Directory (`routes/`)
+
+**Purpose**: Defines application routes and endpoints.
+
+```
+routes/
+├── api.php                 # API routes
+├── auth.php                # Authentication routes
+├── console.php             # Console command routes
+└── web.php                 # Web routes
+```
+
+### API Routes (`routes/api.php`)
+- **RESTful API**: Task CRUD operations
+- **Authentication**: Login, register, logout, password reset
+- **Protected Routes**: Sanctum middleware for API authentication
+- **CSRF Protection**: CSRF cookie endpoint for SPA
+
+### Web Routes (`routes/web.php`)
+- **Web Interface**: Traditional web pages (if needed)
+- **Dashboard**: Admin or user dashboard routes
+
+## Resources Directory (`resources/`)
+
+**Purpose**: Contains views, assets, and language files.
+
+```
+resources/
+├── css/
+│   └── app.css             # Main stylesheet
+├── js/
+│   └── app.js              # Main JavaScript file
+└── views/                  # Blade templates
+    ├── components/         # Reusable Blade components
+    ├── dashboard.blade.php # Dashboard view
+    ├── emails/             # Email templates
+    ├── flux/               # Livewire Flux components
+    ├── livewire/           # Livewire components
+    ├── partials/           # Partial views
+    └── welcome.blade.php   # Welcome page
+```
+
+**Key Features**:
+- **Blade Templates**: Laravel's templating engine
+- **Component Architecture**: Reusable UI components
+- **Livewire Integration**: Reactive components
+- **Asset Compilation**: Vite for modern asset building
+
+## Storage Directory (`storage/`)
+
+**Purpose**: Contains application storage, logs, and cache files.
+
+```
+storage/
+├── app/                    # Application storage
+│   ├── private/            # Private files
+│   └── public/             # Public files
+├── framework/              # Framework cache and sessions
+│   ├── cache/              # Application cache
+│   ├── sessions/           # Session files
+│   └── views/              # Compiled Blade views
+└── logs/                   # Application logs
+    └── laravel.log         # Main log file
+```
+
+## Tests Directory (`tests/`)
+
+**Purpose**: Contains all test files for the application.
+
+```
+tests/
+├── Feature/                # Feature tests (integration tests)
+│   ├── Auth/               # Authentication tests
+│   ├── DashboardTest.php   # Dashboard functionality tests
+│   ├── Settings/           # Settings feature tests
+│   ├── TaskApiAuthenticationTest.php
+│   └── TaskApiTest.php     # Task API tests
+├── Unit/                   # Unit tests
+│   └── ExampleTest.php     # Example unit test
+├── Pest.php                # Pest testing configuration
+└── TestCase.php            # Base test case class
+```
+
+**Testing Strategy**:
+- **Feature Tests**: End-to-end API testing
+- **Unit Tests**: Individual component testing
+- **Pest Framework**: Modern PHP testing framework
+- **Authentication Tests**: Comprehensive auth flow testing
+- **API Tests**: RESTful API endpoint testing
+
+## Key Architectural Patterns
+
+### 1. Repository Pattern
+- **Interface Segregation**: `TaskRepositoryInterface` defines contracts
+- **Implementation**: `TaskRepository` provides Eloquent implementation
+- **Dependency Injection**: Bound in `RepositoryServiceProvider`
+- **Benefits**: Testability, flexibility, separation of concerns
+
+### 2. API Resource Pattern
+- **Data Transformation**: `TaskResource` formats API responses
+- **Consistency**: Standardized API response structure
+- **Versioning**: Easy to maintain API versioning
+
+### 3. Form Request Validation
+- **Centralized Validation**: `TaskRequest` handles input validation
+- **Custom Rules**: Business-specific validation logic
+- **Error Handling**: Automatic error response formatting
+
+### 4. Policy-Based Authorization
+- **Resource Protection**: `TaskPolicy` controls access
+- **User-Specific Access**: Users can only access their own tasks
+- **Clean Authorization**: Separated from business logic
+
+### 5. Service Provider Pattern
+- **Dependency Injection**: Service container configuration
+- **Service Registration**: Third-party service setup
+- **Modular Configuration**: Organized service setup
+
+## Technology Stack
+
+- **Laravel 12**: Latest Laravel framework
+- **PHP 8.2+**: Modern PHP features
+- **SQLite**: Development database
+- **Laravel Sanctum**: API authentication
+- **Laravel Fortify**: Authentication features
+- **Livewire**: Reactive components
+- **Pest**: Testing framework
+- **Vite**: Asset compilation
+- **Docker**: Containerization support
+
+## Benefits of This Structure
+
+1. **Maintainability**: Clear separation of concerns
+2. **Testability**: Comprehensive testing setup
+3. **Scalability**: Repository pattern allows easy scaling
+4. **Security**: Multiple layers of protection
+5. **API-First**: Built for modern SPA frontends
+6. **Modern PHP**: Uses latest PHP and Laravel features
+7. **Team Collaboration**: Clear structure for team development
+8. **Documentation**: Well-documented code and structure
+
+This architecture provides a solid foundation for a modern, scalable, and maintainable Laravel application that can handle complex business requirements while maintaining code quality and developer productivity.
